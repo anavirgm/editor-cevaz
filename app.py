@@ -420,23 +420,29 @@ def archivo():
                 precios = PRECIO_REGEX.findall(parrafo)
                 impuesto = IMPUESTO_REGEX.search(parrafo)
                 precio_total = PRECIO_TOTAL_REGEX.search(parrafo)
-
+                
                 if precios:
                     if clave not in precios_agrupados:
                         precios_agrupados[clave] = []
 
                     precio_base = precios[0]
                     porcentaje_impuesto = impuesto.group(1) if impuesto else None
-                    total = precio_total.group(1) if precio_total else None
+
+                    # Cálculo automático del total si impuesto está presente
+                    if porcentaje_impuesto:
+                        total = round(float(precio_base) * (1 + float(porcentaje_impuesto) / 100), 2)
+                    else:
+                        total = None  # No se puede calcular sin impuesto
 
                     precios_agrupados[clave].append({
                         "es_precio": True,
-                        "etiqueta": "Precio del servicio",  # etiqueta fija para mostrarlo como las fechas
+                        "etiqueta": "Precio del servicio",
                         "precio_base": precio_base,
                         "porcentaje_impuesto": porcentaje_impuesto,
-                        "precio_total": total,
+                        "precio_total": f"{total:.2f}" if total is not None else None,
                         "original": parrafo
                     })
+
 
             # Insertar en la estructura principal
             for clave, precios in precios_agrupados.items():
@@ -451,6 +457,8 @@ def archivo():
 
     return render_template('archivo.html', datos=datos_estructurados, archivo_subido=nombre_archivo_descarga)
 
+
+# region ACTUALIZAR FECHAS Y PRECIOS
 @app.route('/actualizar-fechas', methods=['POST'])
 def actualizar_fechas():
     archivo_original = request.form['archivo_original']
@@ -476,10 +484,19 @@ def actualizar_fechas():
             sede, bloque, idx = partes[1], partes[2], partes[3]
             precio_base = request.form[key]
             porcentaje_impuesto = request.form.get(f"porcentaje_impuesto-{sede}-{bloque}-{idx}")
-            precio_total = request.form.get(f"precio_total-{sede}-{bloque}-{idx}")
+            precio_total = None  # <-- Inicializa aquí
+            # Recalcula el total si base e impuesto están presentes
+            try:
+                if precio_base and porcentaje_impuesto:
+                    total = round(float(precio_base) * (1 + float(porcentaje_impuesto) / 100), 2)
+                    precio_total = f"{total:.2f}"
+            except Exception as e:
+                print(f"Error calculando total: {e}")
+                precio_total = None
+
             texto_original = request.form.get(f"original-precio-{sede}-{bloque}-{idx}")
             nuevos_precios[(sede, bloque, idx)] = (precio_base, porcentaje_impuesto, precio_total, texto_original)
-                    
+     
     for p in document.paragraphs:
         for (sede, bloque, etiqueta), (nueva_ini, nueva_fin, texto_original) in nuevas_fechas.items():
             if texto_original in p.text:
@@ -493,12 +510,29 @@ def actualizar_fechas():
     for p in document.paragraphs:
         for (sede, bloque, idx), (precio_base, porcentaje_impuesto, precio_total, texto_original) in nuevos_precios.items():
             if texto_original and texto_original in p.text:
-                nuevo_texto = f"${precio_base}"
+                # Primero, actualiza el precio base y el impuesto en el texto del párrafo
+                nuevo_texto = p.text
+                # Cambia el primer precio base
+                if precio_base:
+                    nuevo_texto = re.sub(PRECIO_REGEX, f"${precio_base}", nuevo_texto, count=1)
+                # Cambia el impuesto
                 if porcentaje_impuesto:
-                    nuevo_texto += f" + {porcentaje_impuesto}% impuesto"
+                    nuevo_texto = re.sub(IMPUESTO_REGEX, f"{porcentaje_impuesto}% impuesto", nuevo_texto)
+                # Calcula el total si no está
+                if not precio_total and precio_base and porcentaje_impuesto:
+                    try:
+                        total = round(float(precio_base) * (1 + float(porcentaje_impuesto) / 100), 2)
+                        precio_total = f"{total:.2f}"
+                    except Exception as e:
+                        precio_total = None
+                # Cambia o agrega el monto total
                 if precio_total:
-                    nuevo_texto += f" = ${precio_total} monto a pagar"
-                p.text = p.text.replace(texto_original, nuevo_texto)
+                    if PRECIO_TOTAL_REGEX.search(nuevo_texto):
+                        nuevo_texto = re.sub(PRECIO_TOTAL_REGEX, f"monto a pagar sería ${precio_total}", nuevo_texto)
+                    else:
+                        nuevo_texto += f" El monto a pagar sería ${precio_total}."
+                p.text = nuevo_texto
+
                 
 
     fecha_hoy = datetime.today().strftime('%d-%m-%Y')
@@ -594,6 +628,37 @@ def descargar_archivo(nombre_archivo):
     nuevo_nombre = f"VARIABLE AL {fecha_hoy}.docx"
     ruta_archivo = os.path.join(app.config['UPLOAD_FOLDER'], nombre_archivo)
     return send_file(ruta_archivo, as_attachment=True, download_name=nuevo_nombre)
+
+
+def reemplazar_precio_en_texto(texto_original, nuevo_precio, nuevo_impuesto, nuevo_total):
+    texto_actualizado = texto_original
+
+    # Reemplaza el precio base
+    if nuevo_precio:
+        texto_actualizado = re.sub(PRECIO_REGEX, f"${nuevo_precio}", texto_actualizado, count=1)
+
+    # Reemplaza el impuesto
+    if nuevo_impuesto:
+        texto_actualizado = re.sub(IMPUESTO_REGEX, f"{nuevo_impuesto}% impuesto", texto_actualizado)
+
+    # Calcula el total si no se pasa explícitamente
+    if not nuevo_total and nuevo_precio and nuevo_impuesto:
+        try:
+            precio_float = float(nuevo_precio)
+            impuesto_float = float(nuevo_impuesto)
+            nuevo_total = f"{precio_float * (1 + impuesto_float / 100):.2f}"
+        except Exception as e:
+            print(f"Error calculando total: {e}")
+            nuevo_total = None
+
+    # Reemplaza o agrega el monto total
+    if nuevo_total:
+        if PRECIO_TOTAL_REGEX.search(texto_actualizado):
+            texto_actualizado = re.sub(PRECIO_TOTAL_REGEX, f"monto a pagar sería ${nuevo_total}", texto_actualizado)
+        else:
+            texto_actualizado += f" El monto a pagar sería ${nuevo_total}."
+
+    return texto_actualizado
 
 
 # ------------------------ INICIO ------------------------

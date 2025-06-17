@@ -48,6 +48,7 @@
                 style="width:auto;" value="{{ item.fecha_fin }}" />
             {% endif %}
         </div>
+
         {% else %}
         <div class="input-pair mb-3">
             <label>{{ item.etiqueta }}:</label><br />
@@ -65,14 +66,12 @@
             {% if item.precio_total %}
             <label>Precio total:</label>
             <input type="text" class="form-control d-inline-block" style="width:auto;"
-                name="precio_total-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.precio_total }}" />
+                name="precio_total-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.precio_total }}" readonly />
             {% endif %}
         </div>
         {% endif %}
 
-
         {% endfor %}
-
 
         {% endfor %}
     </div>
