@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Generar Documento{% endblock %}
+
+{% block content %}
+
+<h1 class="mb-4">Actualizar archivo</h1>
+
+<form method="POST" enctype="multipart/form-data" class="mb-5">
+    <div class="mb-3">
+        <input type="file" name="archivo" class="form-control" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Subir y procesar</button>
+</form>
+
+{% if datos %}
+<h2>Fechas encontradas por sede:</h2>
+<div class="mb-3">
+    <label for="sedeSelect" class="form-label">Selecciona una sede:</label>
+    <select class="form-select" id="sedeSelect">
+        <option value="">-- Selecciona una sede --</option>
+        {% for sede in datos %}
+        {% if datos[sede]|length > 0 %}
+        <option value="{{ sede }}">{{ sede }}</option>
+        {% endif %}
+        {% endfor %}
+    </select>
+</div>
+
+<form method="POST" action="{{ url_for('actualizar_fechas') }}">
+    <input type="hidden" name="archivo_original" value="{{ archivo_subido }}">
+    {% for sede, bloques in datos.items() %}
+    <div class="sede-fechas" data-sede="{{ sede }}" style="display: none;">
+        <h4 class="sede-title">{{ sede }}</h4>
+        {% for bloque, fechas in bloques.items() %}
+        <div class="bloque-title">{{ bloque }}</div>
+        {% for item in fechas %}
+        {% set idx = loop.index0 %}
+        {% if not item.es_precio %}
+        <label>{{ item.etiqueta }}:</label><br />
+        <div class="input-pair mb-3">
+            <input type="hidden" name="meta-{{ sede }}-{{ bloque }}-{{ idx }}-etiqueta" value="{{ item.etiqueta }}">
+            <input type="hidden" name="original-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.original }}">
+            <input type="date" name="fecha_inicio-{{ sede }}-{{ bloque }}-{{ idx }}" class="form-control d-inline-block"
+                style="width:auto;" value="{{ item.fecha_inicio }}" />
+            {% if item.fecha_fin %}
+            <input type="date" name="fecha_fin-{{ sede }}-{{ bloque }}-{{ idx }}" class="form-control d-inline-block"
+                style="width:auto;" value="{{ item.fecha_fin }}" />
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="input-pair mb-3">
+            <label>{{ item.etiqueta }}:</label><br />
+            <input type="hidden" name="original-precio-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.original }}">
+            {% if item.precio_base %}
+            <label>Precio base:</label>
+            <input type="text" class="form-control d-inline-block" style="width:auto;"
+                name="precio_base-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.precio_base }}" />
+            {% endif %}
+            {% if item.porcentaje_impuesto %}
+            <label>Impuesto (%):</label>
+            <input type="text" class="form-control d-inline-block" style="width:auto;"
+                name="porcentaje_impuesto-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.porcentaje_impuesto }}" />
+            {% endif %}
+            {% if item.precio_total %}
+            <label>Precio total:</label>
+            <input type="text" class="form-control d-inline-block" style="width:auto;"
+                name="precio_total-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.precio_total }}" />
+            {% endif %}
+        </div>
+        {% endif %}
+
+
+        {% endfor %}
+
+
+        {% endfor %}
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-success mt-4">Guardar cambios</button>
+</form>
+{% endif %}
+
+{% if archivo_subido %}
+<a href="{{ url_for('descargar_archivo', nombre_archivo=archivo_subido) }}" class="btn btn-secondary mt-3">
+    Descargar archivo original
+</a>
+{% endif %}
+
+
+<script>
+    document.getElementById("sedeSelect").addEventListener("change", function () {
+        const sedeSeleccionada = this.value;
+        document.querySelectorAll(".sede-fechas").forEach(div => {
+            if (div.getAttribute("data-sede") === sedeSeleccionada) {
+                div.style.display = "block";
+            } else {
+                div.style.display = "none";
+            }
+        });
+    });
+</script>
+{% endblock %}

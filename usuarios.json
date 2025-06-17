@@ -1,0 +1,10 @@
+[
+    {
+        "email": "anamotv.l@gmail.com",
+        "first_name": "Ana",
+        "last_name": "Mota",
+        "password": "scrypt:32768:8:1$8ROMLRDrO8ObcVtP$7035079ccbb5ecdc4a537b98fe113c31a718cdf0abb05d6dcae4396f999c8cea8a53b592f800cc1d8e85829b401e9e6e0705e1755e1fb660803f16e7f8b33af3",
+        "pregunta_recuperacion": "\u00bfCu\u00e1l es el nombre de tu primera mascota?",
+        "respuesta_recuperacion": "Chiquinquira Delgado"
+    }
+]

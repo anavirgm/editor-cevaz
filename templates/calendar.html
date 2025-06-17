@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Calendario de actualizaciones{% endblock %}
+
+{% block content %}
+<h1>Calendario de actualizaciones</h1>
+
+<div id="calendar"></div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<ul class="flashes">
+    {% for category, message in messages %}
+    <li class="{{ category }}">{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endwith %}
+
+<h2>Crear nuevo evento</h2>
+<form method="POST" action="{{ url_for('crear_evento') }}">
+  <label for="titulo">Título:</label><br>
+  <input type="text" id="titulo" name="titulo" required><br>
+
+  <label for="fecha">Fecha:</label><br>
+  <input type="date" id="fecha" name="fecha" required><br>
+
+  <label for="descripcion">Descripción:</label><br>
+  <textarea id="descripcion" name="descripcion" required></textarea><br>
+
+  <button type="submit">Crear evento</button>
+</form>
+
+<hr>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+
+    // Eventos enviados desde Flask (inyectados como JSON)
+    var eventos = {{ eventos | tojson | safe }};
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      events: eventos
+    });
+
+    calendar.render();
+  });
+</script>
+
+
+<style>
+  #calendar {
+    max-width: 1100px;
+    margin: 40px auto;
+  }
+</style>
+{% endblock %}

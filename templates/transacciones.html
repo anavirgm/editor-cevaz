@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Transacciones{% endblock %}
+
+{% block content %}
+<h1>Historial de Archivos Actualizados</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<ul class="flashes">
+    {% for category, message in messages %}
+    <li class="{{ category }}">{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endwith %}
+
+
+    {% if archivos %}
+        <ul>
+        {% for archivo in archivos %}
+            <li>
+                {{ archivo }} - 
+                <a href="{{ url_for('descargar_transaccion', nombre_archivo=archivo) }}">Descargar</a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No hay archivos disponibles.</p>
+    {% endif %}
+
+{% endblock %}
+
+

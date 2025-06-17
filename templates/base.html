@@ -1,0 +1,92 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Sidebar{% endblock %}</title>
+    <link rel='stylesheet'
+        href='https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;display=swap'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.css">
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.17/index.global.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.17/index.global.min.js'></script>
+    
+</head>
+
+<body>
+    <!-- HEADER -->
+    <header class="header" id="header">
+        <div class="header__container">
+            <button class="header__toggle" id="header-toggle">
+                <i class="ri-menu-line"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar__container">
+
+
+            <div class="sidebar__content">
+                <div>
+                    <h3 class="sidebar__title">MANAGE</h3>
+                    <div class="sidebar__list">
+
+                        <a href="{{ url_for('archivo') }}"
+                            class="sidebar__link {% if request.path == url_for('archivo') %}active-link{% endif %}">
+                            <i class="ri-file-download-fill"></i>
+                            <span>Archive</span>
+                        </a>
+
+                        <a href="{{ url_for('calendar') }}" class="sidebar__link {% if request.path == url_for('calendar') %}active-link{% endif %}">
+                            <i class="ri-calendar-fill"></i>
+                            <span>Calendar</span>
+                        </a>
+
+                        <a href="{{ url_for('transacciones') }}" class="sidebar__link">
+                            <i class="ri-arrow-up-down-line"></i>
+                            <span>Transactions</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="sidebar__title">SETTINGS</h3>
+                    <div class="sidebar__list">
+                        <a href="#" class="sidebar__link">
+                            <i class="ri-settings-3-fill"></i>
+                            <span>Settings</span>
+                        </a>
+                        <a href="#" class="sidebar__link">
+                            <i class="ri-question-fill"></i>
+                            <span>Help</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar__actions">
+                <a href="{{ url_for('logout') }}" class="sidebar__link">
+                    <i class="ri-logout-box-r-fill"></i>
+                    <span>Log Out</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main container" id="main">
+        <div class="main-content">
+            {% block content %}
+            <!-- Aquí va el contenido de cada página -->
+            {% endblock %}
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>
