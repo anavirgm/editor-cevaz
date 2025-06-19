@@ -525,9 +525,6 @@ def actualizar_fechas():
                     )
                 p.text = nuevo_texto
 
-
-                
-
     fecha_hoy = datetime.today().strftime('%d-%m-%Y')
     nuevo_nombre = f"VARIABLE AL {fecha_hoy}.docx"
     ruta_guardado = os.path.join(app.config['UPLOAD_FOLDER'], nuevo_nombre)
@@ -567,7 +564,7 @@ def reemplazar_precio_en_texto(texto_original, nuevo_precio, nuevo_impuesto, nue
 
     return texto_actualizado
 
-
+#region TRANSACCIONES
 @app.route('/transacciones')
 def transacciones():
     if 'usuario' not in session:
@@ -577,6 +574,7 @@ def transacciones():
     archivos = sorted(os.listdir(app.config['TRANSACCIONES_FOLDER']), reverse=True)
     return render_template('transacciones.html', archivos=archivos)
 
+#region CONFIGURACIONES
 @app.route('/settings')
 def settings():
     if 'usuario' not in session:
@@ -585,6 +583,7 @@ def settings():
     
     return render_template('settings.html')
 
+#region HELP
 @app.route('/help')
 def help():
     if 'usuario' not in session:
@@ -593,12 +592,13 @@ def help():
     
     return render_template('help.html')
 
+#region DESCARGAR TRANSACCIONES
 @app.route('/descargar-transaccion/<nombre_archivo>')
 def descargar_transaccion(nombre_archivo):
     ruta_archivo = os.path.join(app.config['TRANSACCIONES_FOLDER'], nombre_archivo)
     return send_file(ruta_archivo, as_attachment=True, download_name=nombre_archivo)
 
-
+#region CREAR EVENTO
 @app.route('/crear-evento', methods=['POST'])
 def crear_evento():
     titulo = request.form['titulo']
@@ -628,6 +628,7 @@ def crear_evento():
     flash("Evento creado y notificación enviada.", "success")
     return redirect(url_for('calendar'))
 
+#region ENVIAR NOTIFICACIÓN POR CORREO
 def enviar_notificacion_email(titulo, fecha, descripcion):
     try:
         # Obtener el correo del usuario actualmente logueado
@@ -648,6 +649,7 @@ def enviar_notificacion_email(titulo, fecha, descripcion):
         print(f"Error al enviar correo: {str(e)}")
         flash("Error al enviar notificación por correo.", "error")
 
+#region DESCARGAR ARCHIVO
 @app.route('/descargar/<nombre_archivo>')
 def descargar_archivo(nombre_archivo):
     fecha_hoy = datetime.today().strftime('%d-%m-%Y')
