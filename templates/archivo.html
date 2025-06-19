@@ -56,17 +56,17 @@
             {% if item.precio_base %}
             <label>Precio base:</label>
             <input type="text" class="form-control d-inline-block" style="width:auto;"
-                name="precio_base-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.precio_base }}" />
-            {% endif %}
-            {% if item.porcentaje_impuesto %}
+                name="precio_base-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.precio_base}}" />
+
             <label>Impuesto (%):</label>
             <input type="text" class="form-control d-inline-block" style="width:auto;"
-                name="porcentaje_impuesto-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.porcentaje_impuesto }}" />
-            {% endif %}
-            {% if item.precio_total %}
+                name="porcentaje_impuesto-{{ sede }}-{{ bloque }}-{{ idx }}"
+                value="{{ item.porcentaje_impuesto}}" />
+
             <label>Precio total:</label>
             <input type="text" class="form-control d-inline-block" style="width:auto;"
-                name="precio_total-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.precio_total }}" readonly />
+                name="precio_total-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.precio_total}}" />
+
             {% endif %}
         </div>
         {% endif %}
@@ -98,5 +98,6 @@
             }
         });
     });
+
 </script>
 {% endblock %}

@@ -63,7 +63,7 @@ PRECIO_REGEX = re.compile(
     r"\$([0-9]+(?:\.[0-9]{1,2})?)"
 )
 IMPUESTO_REGEX = re.compile(
-    r"(?:impuesto[s]?|IGTF)[^\d]{0,10}(\d{1,2}(?:\.\d{1,2})?)\s*%"
+    r"(\d{1,2}(?:\.\d{1,2})?)\s*%.*?(?:impuesto[s]?|IGTF)", re.IGNORECASE
 )
 PRECIO_TOTAL_REGEX = re.compile(
     r"monto a pagar (?:sería|es|seria|seran|serán)[^\$]*\$([0-9]+(?:\.[0-9]{1,2})?)", re.IGNORECASE
@@ -270,7 +270,6 @@ def formatear_fecha_esp(fecha_iso):
 
 
 # region Archivo
-
 @app.route('/archivo', methods=['GET', 'POST'])
 def archivo():
 
@@ -510,28 +509,22 @@ def actualizar_fechas():
     for p in document.paragraphs:
         for (sede, bloque, idx), (precio_base, porcentaje_impuesto, precio_total, texto_original) in nuevos_precios.items():
             if texto_original and texto_original in p.text:
-                # Primero, actualiza el precio base y el impuesto en el texto del párrafo
                 nuevo_texto = p.text
-                # Cambia el primer precio base
+                # Reemplaza solo el primer precio base
                 if precio_base:
-                    nuevo_texto = re.sub(PRECIO_REGEX, f"${precio_base}", nuevo_texto, count=1)
-                # Cambia el impuesto
+                    nuevo_texto = re.sub(r"\$[0-9]+(?:\.[0-9]{1,2})?", f"${precio_base}", nuevo_texto, count=1)
+                # Reemplaza solo el porcentaje de impuesto
                 if porcentaje_impuesto:
-                    nuevo_texto = re.sub(IMPUESTO_REGEX, f"{porcentaje_impuesto}% impuesto", nuevo_texto)
-                # Calcula el total si no está
-                if not precio_total and precio_base and porcentaje_impuesto:
-                    try:
-                        total = round(float(precio_base) * (1 + float(porcentaje_impuesto) / 100), 2)
-                        precio_total = f"{total:.2f}"
-                    except Exception as e:
-                        precio_total = None
-                # Cambia o agrega el monto total
+                    nuevo_texto = re.sub(r"(\d{1,2}(?:\.\d{1,2})?)\s*%(\s*de)?\s*(impuesto[s]?|IGTF)", f"{porcentaje_impuesto}% de \\3", nuevo_texto)
+                # Reemplaza solo el monto total
                 if precio_total:
-                    if PRECIO_TOTAL_REGEX.search(nuevo_texto):
-                        nuevo_texto = re.sub(PRECIO_TOTAL_REGEX, f"monto a pagar sería ${precio_total}", nuevo_texto)
-                    else:
-                        nuevo_texto += f" El monto a pagar sería ${precio_total}."
+                    nuevo_texto = re.sub(
+                        r"(monto a pagar (?:sería|es|seria|seran|serán)[^\$]*\$)([0-9]+(?:\.[0-9]{1,2})?)",
+                        lambda m: f"{m.group(1)}{precio_total}",
+                        nuevo_texto
+                    )
                 p.text = nuevo_texto
+
 
                 
 
@@ -541,6 +534,39 @@ def actualizar_fechas():
     document.save(ruta_guardado)
 
     return send_file(ruta_guardado, as_attachment=True, download_name=nuevo_nombre)
+
+
+#region Reemplazar precios en texto
+def reemplazar_precio_en_texto(texto_original, nuevo_precio, nuevo_impuesto, nuevo_total):
+    texto_actualizado = texto_original
+
+    # Reemplaza el precio base
+    if nuevo_precio:
+        texto_actualizado = re.sub(PRECIO_REGEX, f"${nuevo_precio}", texto_actualizado, count=1)
+
+    # Reemplaza el impuesto
+    if nuevo_impuesto:
+        texto_actualizado = re.sub(IMPUESTO_REGEX, f"{nuevo_impuesto}% impuesto", texto_actualizado)
+
+    # Calcula el total si no se pasa explícitamente
+    if not nuevo_total and nuevo_precio and nuevo_impuesto:
+        try:
+            precio_float = float(nuevo_precio)
+            impuesto_float = float(nuevo_impuesto)
+            nuevo_total = f"{precio_float * (1 + impuesto_float / 100):.2f}"
+        except Exception as e:
+            print(f"Error calculando total: {e}")
+            nuevo_total = None
+
+    # Reemplaza o agrega el monto total
+    if nuevo_total:
+        if PRECIO_TOTAL_REGEX.search(texto_actualizado):
+            texto_actualizado = re.sub(PRECIO_TOTAL_REGEX, f"monto a pagar sería ${nuevo_total}", texto_actualizado)
+        else:
+            texto_actualizado += f" El monto a pagar sería ${nuevo_total}."
+
+    return texto_actualizado
+
 
 @app.route('/transacciones')
 def transacciones():
@@ -630,35 +656,7 @@ def descargar_archivo(nombre_archivo):
     return send_file(ruta_archivo, as_attachment=True, download_name=nuevo_nombre)
 
 
-def reemplazar_precio_en_texto(texto_original, nuevo_precio, nuevo_impuesto, nuevo_total):
-    texto_actualizado = texto_original
 
-    # Reemplaza el precio base
-    if nuevo_precio:
-        texto_actualizado = re.sub(PRECIO_REGEX, f"${nuevo_precio}", texto_actualizado, count=1)
-
-    # Reemplaza el impuesto
-    if nuevo_impuesto:
-        texto_actualizado = re.sub(IMPUESTO_REGEX, f"{nuevo_impuesto}% impuesto", texto_actualizado)
-
-    # Calcula el total si no se pasa explícitamente
-    if not nuevo_total and nuevo_precio and nuevo_impuesto:
-        try:
-            precio_float = float(nuevo_precio)
-            impuesto_float = float(nuevo_impuesto)
-            nuevo_total = f"{precio_float * (1 + impuesto_float / 100):.2f}"
-        except Exception as e:
-            print(f"Error calculando total: {e}")
-            nuevo_total = None
-
-    # Reemplaza o agrega el monto total
-    if nuevo_total:
-        if PRECIO_TOTAL_REGEX.search(texto_actualizado):
-            texto_actualizado = re.sub(PRECIO_TOTAL_REGEX, f"monto a pagar sería ${nuevo_total}", texto_actualizado)
-        else:
-            texto_actualizado += f" El monto a pagar sería ${nuevo_total}."
-
-    return texto_actualizado
 
 
 # ------------------------ INICIO ------------------------
