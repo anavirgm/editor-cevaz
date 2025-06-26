@@ -14,14 +14,6 @@ body {
   flex-direction: column;
 }
 
-
-.logo {
-  display: block;
-  margin: 0 auto 20px;
-  max-width: 100px;
-  height: auto;
-}
-
 html,
 body {
   height: 100%;
@@ -35,15 +27,24 @@ main.main {
 
 .input-pair {
   display: flex;
-  gap: 10px;
-  margin-top: 8px;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.input-pair label {
+  margin: 0;
+  min-width: 120px;
+  font-weight: 600;
+  color: #333;
 }
 
 .input-pair input {
   flex: 1;
   margin-top: 0;
-  /* Quita el margen vertical extra */
 }
+
 
 
 .main-content {
@@ -123,9 +124,9 @@ input {
   border: 1px solid #ccc;
 }
 
-/* Opcional: Centrar el contenido si lo deseas */
 .main-content h1 {
   text-align: center;
+  margin-bottom: 2rem;
 }
 
 
@@ -255,27 +256,6 @@ button {
 }
 
 
-
-/*=============== VARIABLES DARK THEME ===============
-body.dark-theme {
-  --first-color: rgb(0, 68, 196);
-  --title-color: hsl(228, 18%, 96%);
-  --text-color: hsl(228, 12%, 61%);
-  --body-color: hsl(228, 24%, 16%);
-  --shadow-color: hsla(228, 80%, 4%, .3);
-  --background-color: hsl(228, 24%, 16%);
-}
-
-.dark-theme .sidebar__content::-webkit-scrollbar {
-  background-color: hsl(228, 16%, 30%);
-}
-
-.dark-theme .sidebar__content::-webkit-scrollbar-thumb {
-  background-color: hsl(228, 16%, 40%);
-}
-*/
-
-
 /*=============== REUSABLE CSS CLASSES ===============*/
 
 
@@ -324,76 +304,479 @@ body.dark-theme {
   font-weight: var(--font-semi-bold);
 }
 
+/* ...existing code... */
+
 .header__toggle {
+  all: unset;
   font-size: 1.5rem;
   color: var(--title-color);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  font-weight: normal;
+  transition: color 0.2s;
 }
 
+/* --------- Formularios y campos --------- */
+form {
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+  padding: 2rem 2.5rem;
+  margin: 2rem auto;
+}
 
-
-
-
-
-/* Estilo para el Select */
+input[type="text"],
+input[type="date"],
+input[type="file"],
+input[type="number"],
+textarea,
+select,
+.form-control,
 .form-select {
-  display: block;
-  width: 100%;
-  padding: 12px 20px;
-  font-size: 16px;
-  font-weight: 500;
-  color: #333;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  background-color: #fff;
-  transition: all 0.3s ease;
-}
-
-.form-select:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-/* Estilo para el Input de archivo */
-.form-control[type="file"] {
-  font-size: 16px;
-  color: #333;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  background-color: #fff;
-  transition: all 0.3s ease;
-}
-
-.form-control[type="file"]:hover {
-  border-color: #007bff;
-}
-
-.form-control[type="file"]:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-/* Estilo para el botón */
-.btn-primary {
-  background-color: #007bff;
-  border-color: #007bff;
-  padding: 12px 30px;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-  background-color: #0056b3;
-  border-color: #004085;
-}
-
-.btn-primary:focus {
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  background: #f7fafd;
+  border: 1.5px solid #dbeafe;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  color: #222;
+  margin-bottom: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
   outline: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px #e3f0fc;
+}
+
+textarea {
+  min-height: 120px;
+  max-width: 100%;
+  width: 100%;
+  resize: vertical;
+  font-family: inherit;
+}
+
+input[type="file"] {
+  padding: 10px 0;
+  background: #f7fafd;
+  border-radius: 12px;
+  border: 1.5px solid #dbeafe;
+}
+
+label,
+.form-label {
+  font-weight: 600;
+  color: #003366;
+  margin-bottom: 0.5rem;
+  display: block;
+  letter-spacing: 0.02em;
+  font-size: 1.1rem;
+}
+
+/* --------- Botones --------- */
+button,
+.btn,
+.btn-primary,
+.btn-success,
+.btn-secondary {
+  display: inline-block;
+  background: linear-gradient(90deg, #4a90e2 0%, #357ab8 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 1rem;
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.08);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+
+button:hover,
+.btn:hover,
+.btn-primary:hover,
+.btn-success:hover,
+.btn-secondary:hover {
+  background: linear-gradient(90deg, #357ab8 0%, #4a90e2 100%);
+  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.13);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.btn-success {
+  background: linear-gradient(90deg, #198754 0%, #43c59e 100%);
+}
+
+.btn-success:hover {
+  background: linear-gradient(90deg, #43c59e 0%, #198754 100%);
+}
+
+.btn-secondary {
+  background: linear-gradient(90deg, #6c757d 0%, #adb5bd 100%);
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(90deg, #adb5bd 0%, #6c757d 100%);
+}
+
+/* --------- Tarjetas de archivos --------- */
+.archivo-lista {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  margin: 2rem auto;
+  max-width: 1200px;
+}
+
+.archivo-cuadro {
+  background: linear-gradient(135deg, #f7fafd 60%, #e3f0fc 100%);
+  border: 1.5px solid #dbeafe;
+  border-radius: 1.2rem;
+  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.07);
+  padding: 2rem 1.5rem;
+  width: 270px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.archivo-cuadro:hover {
+  box-shadow: 0 8px 32px rgba(74, 144, 226, 0.18);
+  transform: translateY(-6px) scale(1.03);
+}
+
+.archivo-nombre {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #003366;
+  margin-bottom: 1.2rem;
+  text-align: center;
+  word-break: break-all;
+}
+
+.boton-descargar {
+  background: linear-gradient(90deg, #4a90e2 0%, #357ab8 100%);
+  color: #fff;
+  border-radius: 6px;
+  padding: 10px 22px;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: auto;
+  text-decoration: none;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.08);
+}
+
+.boton-descargar:hover {
+  background: linear-gradient(90deg, #357ab8 0%, #4a90e2 100%);
+  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.13);
+}
+
+
+/* --------- Estilos para el cuadro de ayuda/manual --------- */
+.help-manual-card {
+  max-width: 500px;
+  min-height: auto;
+  margin: 2rem auto;
+  background: linear-gradient(135deg, #f7fafd 60%, #e3f0fc 100%);
+  border-radius: 1rem;
+  box-shadow: 0 2px 16px rgba(74,144,226,0.10);
+  padding: 2rem 2rem 1.5rem 2rem;
+  text-align: center;
+  border: 1.5px solid #dbeafe;
+}
+
+.help-manual-card h2 {
+  color: #003366;
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.help-manual-card p {
+  color: #357ab8;
+  margin-bottom: 1.5rem;
+  font-size: 1.05rem;
+}
+
+.help-manual-card .btn {
+  text-decoration: none;
+  padding: 12px 28px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #4a90e2 0%, #357ab8 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(74,144,226,0.08);
+  transition: background 0.2s, box-shadow 0.2s;
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+.help-manual-card .btn:hover {
+  background: linear-gradient(90deg, #357ab8 0%, #4a90e2 100%);
+  box-shadow: 0 4px 16px rgba(74,144,226,0.13);
+}
+
+/* --------- Estilos para el cuadro de preguntas frecuentes --------- */
+.help-faq-card {
+  margin: 2.5rem auto 2rem auto;
+  border-radius: 1rem;
+  box-shadow: 0 2px 16px rgba(74,144,226,0.10);
+  padding: 2rem 2rem 1.5rem 2rem;
+  border: 1.5px solid #dbeafe;
+}
+
+.help-faq-card h2 {
+  color: #003366;
+  margin-bottom: 1.2rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.help-faq-card ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.help-faq-card ul > li {
+  background: #f0f8ff;
+  border-left: 5px solid #4a90e2;
+  border-radius: 6px;
+  margin-bottom: 1.1rem;
+  padding: 1rem 1.2rem 0.7rem 1.2rem;
+  color: #003366;
+  font-size: 1.05rem;
+  box-shadow: 0 1px 4px rgba(74,144,226,0.06);
+  transition: box-shadow 0.2s;
+}
+
+.help-faq-card ul > li strong {
+  color: #357ab8;
+  font-weight: 700;
+  font-size: 1.07rem;
+}
+
+.help-faq-card ul > li em {
+  color: #198754;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.help-faq-card ul > li code {
+  background: #e3f0fc;
+  color: #357ab8;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.98em;
+}
+
+.help-faq-card ul ul {
+  margin-top: 0.7rem;
+  margin-bottom: 0.5rem;
+  padding-left: 1.5rem;
+}
+
+.help-faq-card ul ul li {
+  background: none;
+  border: none;
+  color: #357ab8;
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+  padding: 0;
+  box-shadow: none;
+}
+/* --------- Mensajes flash --------- */
+.flashes {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem auto 2rem auto;
+}
+
+.flashes li {
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  font-size: 1rem;
+  background: linear-gradient(90deg, #e3f0fc 0%, #f7fafd 100%);
+  color: #003366;
+  border-left: 6px solid #4a90e2;
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.06);
+}
+
+.flashes li.success {
+  border-left-color: #43c59e;
+  color: #198754;
+}
+
+.flashes li.error {
+  border-left-color: #e74c3c;
+  color: #c0392b;
+}
+
+.flashes li.warning {
+  border-left-color: #f1c40f;
+  color: #b7950b;
+}
+
+.flashes li.info {
+  border-left-color: #3498db;
+  color: #2980b9;
+}
+
+/* --------- Mejoras para h1, h2, h4 --------- */
+h1,
+h2,
+h4 {
+  font-family: 'Poppins', 'Nunito Sans', Arial, sans-serif;
+  font-weight: 700;
+  color: #003366;
+  letter-spacing: 0.01em;
+}
+
+h1 {
+  font-size: 2.1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+h2 {
+  font-size: 1.4rem;
+  margin: 2rem 0 1.2rem 0;
+  background: linear-gradient(90deg, #e3f0fc 0%, #f7fafd 100%);
+  border-left: 5px solid #4a90e2;
+  padding: 12px 18px;
+  border-radius: 6px;
+}
+
+h4.sede-title {
+  color: #357ab8;
+  font-size: 1.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.7rem;
+  font-style: normal;
+}
+
+.bloque-title {
+  color: #198754;
+  font-style: italic;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.3rem;
+}
+
+/* --------- Mejoras para el calendario --------- */
+#calendar {
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+  padding: 1.5rem;
+  margin: 2rem auto 2.5rem auto;
+  max-width: 1000px;
+}
+
+.fc-toolbar-title {
+  font-family: 'Poppins', Arial, sans-serif;
+  font-size: 1.5rem !important;
+  color: #003366 !important;
+}
+
+.fc-button,
+.fc-button-primary {
+  background: linear-gradient(90deg, #4a90e2 0%, #357ab8 100%) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.08) !important;
+  transition: background 0.2s !important;
+}
+
+.fc-button:hover,
+.fc-button-primary:hover {
+  background: linear-gradient(90deg, #357ab8 0%, #4a90e2 100%) !important;
+}
+
+.fc-daygrid-day-number {
+  color: #357ab8 !important;
+  font-weight: 600 !important;
+}
+
+.fc-event {
+  background: linear-gradient(90deg, #3aaa89 0%, #198754 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 2px 8px rgba(67, 197, 158, 0.08) !important;
+}
+
+/* --------- Otros --------- */
+.back-link {
+  color: #357ab8;
+  font-weight: 600;
+  text-decoration: underline;
+  margin-top: 2.5rem;
+  display: block;
+  text-align: center;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: #003366;
+}
+
+input[readonly], .input-disabled {
+  cursor: not-allowed;
+  background-color: #e9ecef !important;
+  color: #6c757d !important;
+  border: 1px solid #ced4da !important;
+}
+
+/* Responsive para formularios y tarjetas */
+@media (max-width: 700px) {
+  form {
+    padding: 1.2rem;
+    max-width: 98vw;
+  }
+
+  .archivo-lista {
+    gap: 1rem;
+  }
+
+  .archivo-cuadro {
+    width: 98vw;
+    min-width: unset;
+    padding: 1.2rem 0.5rem;
+  }
+
+  #calendar {
+    padding: 0.5rem;
+    max-width: 99vw;
+  }
+}
+
+
+
 
 /* Agregar márgenes y espaciados generales */
 .mb-3 {

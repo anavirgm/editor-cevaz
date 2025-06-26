@@ -6,6 +6,17 @@
 
 <h1 class="mb-4">Actualizar archivo</h1>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<ul class="flashes">
+    {% for category, message in messages %}
+    <li class="{{ category }}">{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endwith %}
+
+
 <form method="POST" enctype="multipart/form-data" class="mb-5">
     <div class="mb-3">
         <input type="file" name="archivo" class="form-control" required />
@@ -41,11 +52,15 @@
         <div class="input-pair mb-3">
             <input type="hidden" name="meta-{{ sede }}-{{ bloque }}-{{ idx }}-etiqueta" value="{{ item.etiqueta }}">
             <input type="hidden" name="original-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.original }}">
-            <input type="date" name="fecha_inicio-{{ sede }}-{{ bloque }}-{{ idx }}" class="form-control d-inline-block"
-                style="width:auto;" value="{{ item.fecha_inicio }}" />
+            <input type="date" name="fecha_inicio-{{ sede }}-{{ bloque }}-{{ idx }}" min="{{hoy}}"
+                class="form-control d-inline-block" style="width:auto;" value="{{ item.fecha_inicio }}"
+                id="fecha_inicio-{{ sede }}-{{ bloque }}-{{ idx }}"
+                onchange="actualizarFechaFinMin('{{ sede }}', '{{ bloque }}', '{{ idx }}')" />
+
             {% if item.fecha_fin %}
-            <input type="date" name="fecha_fin-{{ sede }}-{{ bloque }}-{{ idx }}" class="form-control d-inline-block"
-                style="width:auto;" value="{{ item.fecha_fin }}" />
+            <input type="date" name="fecha_fin-{{ sede }}-{{ bloque }}-{{ idx }}" min="{{hoy}}"
+                class="form-control d-inline-block" style="width:auto;" value="{{ item.fecha_fin }}"
+                id="fecha_fin-{{ sede }}-{{ bloque }}-{{ idx }}" />
             {% endif %}
         </div>
 
@@ -55,17 +70,17 @@
             <input type="hidden" name="original-precio-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.original }}">
             {% if item.precio_base %}
             <label>Precio base:</label>
-            <input type="text" class="form-control d-inline-block" style="width:auto;"
-                name="precio_base-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.precio_base}}" />
+            <input type="number" class="form-control d-inline-block" style="width:auto;"
+                name="precio_base-{{ sede }}-{{ bloque }}-{{ idx }}" min="0" value="{{ item.precio_base}}" />
 
             <label>Impuesto (%):</label>
-            <input type="text" class="form-control d-inline-block" style="width:auto;"
-                name="porcentaje_impuesto-{{ sede }}-{{ bloque }}-{{ idx }}"
-                value="{{ item.porcentaje_impuesto}}" />
+            <input type="number" class="form-control d-inline-block input-disabled" style="width:auto;"
+                name="porcentaje_impuesto-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.porcentaje_impuesto}}"
+                readonly />
 
             <label>Precio total:</label>
-            <input type="text" class="form-control d-inline-block" style="width:auto;"
-                name="precio_total-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.precio_total}}" />
+            <input type="number" class="form-control d-inline-block input-disabled" style="width:auto;"
+                name="precio_total-{{ sede }}-{{ bloque }}-{{ idx }}" value="{{ item.precio_total}}" readonly />
 
             {% endif %}
         </div>
@@ -80,13 +95,6 @@
 </form>
 {% endif %}
 
-{% if archivo_subido %}
-<a href="{{ url_for('descargar_archivo', nombre_archivo=archivo_subido) }}" class="btn btn-secondary mt-3">
-    Descargar archivo original
-</a>
-{% endif %}
-
-
 <script>
     document.getElementById("sedeSelect").addEventListener("change", function () {
         const sedeSeleccionada = this.value;
@@ -99,5 +107,22 @@
         });
     });
 
+
+    function actualizarFechaFinMin(sede, bloque, idx) {
+        // Obtener la fecha de inicio seleccionada
+        const fechaInicio = document.getElementById(`fecha_inicio-${sede}-${bloque}-${idx}`).value;
+        
+        // Si la fecha de inicio es válida, actualizar el min de la fecha de fin
+        if (fechaInicio) {
+            const fechaFinInput = document.getElementById(`fecha_fin-${sede}-${bloque}-${idx}`);
+            fechaFinInput.setAttribute('min', fechaInicio);
+            
+            // Si la fecha_fin ya está seleccionada y es anterior a la nueva fecha mínima, actualizarla también
+            const fechaFin = fechaFinInput.value;
+            if (fechaFin && fechaFin < fechaInicio) {
+                fechaFinInput.value = '';
+            }
+        }
+    }
 </script>
 {% endblock %}

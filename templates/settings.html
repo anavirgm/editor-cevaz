@@ -1,7 +1,58 @@
 {% extends "base.html" %}
 
-{% block title %}Settings{% endblock %}
+{% block title %}Configuración de cuenta{% endblock %}
 
 {% block content %}
-<h1>Settings</h1>
+<h1>Configuración de cuenta</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<ul class="flashes">
+    {% for category, message in messages %}
+    <li class="{{ category }}">{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endwith %}
+
+<div style="margin: 0 auto;">
+    <form method="POST" action="{{ url_for('settings') }}">
+        <h2>Cambiar correo electrónico</h2>
+        <label for="new_email">Nuevo correo electrónico:</label>
+        <input type="email" id="new_email" name="new_email" class="form-control" required>
+        <button type="submit" name="action" value="change_email" class="btn btn-primary">Actualizar correo</button>
+    </form>
+
+    <hr>
+
+    <form method="POST" action="{{ url_for('settings') }}">
+        <h2>Cambiar contraseña</h2>
+        <label for="current_password">Contraseña actual:</label>
+        <input type="password" id="current_password" name="current_password" class="form-control" required>
+        <label for="new_password">Nueva contraseña:</label>
+        <input type="password" id="new_password" name="new_password" class="form-control" required>
+        <label for="confirm_password">Confirmar nueva contraseña:</label>
+        <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+        <button type="submit" name="action" value="change_password" class="btn btn-success">Actualizar
+            contraseña</button>
+    </form>
+
+    <hr>
+
+    <form method="POST" action="{{ url_for('settings') }}">
+        <h2>Cambiar pregunta de recuperación</h2>
+        <label for="pregunta_recuperacion">Nueva pregunta:</label>
+        <select id="pregunta_recuperacion" name="pregunta_recuperacion" class="form-control" required>
+            <option value="">Selecciona una pregunta</option>
+            {% for pregunta in preguntas_predeterminadas %}
+            <option value="{{ pregunta }}" {% if pregunta==pregunta_actual %}selected{% endif %}>{{ pregunta }}</option>
+            {% endfor %}
+        </select>
+        <label for="respuesta_recuperacion">Nueva respuesta:</label>
+        <input type="text" id="respuesta_recuperacion" name="respuesta_recuperacion" class="form-control" required
+            value="{{ respuesta_actual }}">
+        <button type="submit" name="action" value="change_recovery" class="btn btn-secondary">Actualizar
+            pregunta</button>
+    </form>
+</div>
 {% endblock %}

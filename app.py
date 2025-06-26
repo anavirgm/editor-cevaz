@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_file,
 import os
 import json
 import pandas as pd
-from datetime import datetime
+from datetime import date, datetime
 from docx import Document
 import locale
 from werkzeug.utils import secure_filename
@@ -11,6 +11,7 @@ import os
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Mail, Message
+from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
 app.secret_key = 'clave_secreta'
@@ -238,6 +239,7 @@ def logout():
     flash('Sesión cerrada correctamente.', 'info')
     return redirect(url_for('login'))
 
+#region CALENDARIO
 @app.route('/calendar', methods=['GET', 'POST'])
 def calendar():
     if 'usuario' not in session:
@@ -249,7 +251,7 @@ def calendar():
     if os.path.exists(LOG_FILE):
         with open(LOG_FILE, 'r') as f:
             fechas_actualizaciones = json.load(f)
-    eventos_actualizaciones = [{"title": "Actualización de archivo", "start": fecha} for fecha in fechas_actualizaciones]
+    eventos_actualizaciones = [{"title": "Se actualizó el archivo", "start": fecha} for fecha in fechas_actualizaciones]
 
     # Cargar eventos personalizados
     eventos_personalizados = []
@@ -259,7 +261,8 @@ def calendar():
 
     todos_los_eventos = eventos_actualizaciones + eventos_personalizados
 
-    return render_template('calendar.html', eventos=todos_los_eventos)
+    hoy = date.today().isoformat()
+    return render_template('calendar.html', eventos=todos_los_eventos, hoy=hoy)
 
 def formatear_fecha_esp(fecha_iso):
     meses_rev = {v: k for k, v in MESES.items()}
@@ -267,9 +270,62 @@ def formatear_fecha_esp(fecha_iso):
     mes_nombre = meses_rev.get(mes, "mes")
     return f"{int(dia)} de {mes_nombre} de {año}"
 
+#region CREAR EVENTO
+@app.route('/crear-evento', methods=['POST'])
+def crear_evento():
+    titulo = request.form['titulo']
+    fecha = request.form['fecha']
+    descripcion = request.form['descripcion']
+    creador = session.get('usuario')
+
+    nuevo_evento = {
+        "title": titulo,
+        "start": fecha,
+        "description": descripcion,
+        "creador": creador  # Nuevo campo
+    }
+
+    # Guardar en eventos.json
+    if os.path.exists(EVENTOS_FILE):
+        with open(EVENTOS_FILE, 'r') as f:
+            eventos = json.load(f)
+    else:
+        eventos = []
+
+    eventos.append(nuevo_evento)
+    with open(EVENTOS_FILE, 'w') as f:
+        json.dump(eventos, f, indent=4)
+
+    # Enviar notificación por correo
+    enviar_notificacion_email(titulo, fecha, descripcion)
+
+    flash("Evento creado y notificación enviada.", "success")
+    return redirect(url_for('calendar'))
 
 
-# region Archivo
+#region --------------------- ENVIAR RECORDATORIOS DE EVENTOS -------------------------------
+def enviar_recordatorios_eventos():
+    with app.app_context():
+        hoy = date.today().isoformat()
+        if os.path.exists(EVENTOS_FILE):
+            with open(EVENTOS_FILE, 'r') as f:
+                eventos = json.load(f)
+            for evento in eventos:
+                if evento.get("start") == hoy and evento.get("creador"):
+                    destinatario = evento["creador"]
+                    try:
+                        msg = Message(
+                            subject=f"Recordatorio: {evento['title']}",
+                            sender=app.config['MAIL_USERNAME'],
+                            recipients=[destinatario]
+                        )
+                        msg.body = f"Hoy es el evento: {evento['title']}\n\nDescripción: {evento.get('description', '')}"
+                        mail.send(msg)
+                    except Exception as e:
+                        print(f"Error enviando recordatorio: {e}")
+
+
+# region ----------------------- ARCHIVO ----------------------------
 @app.route('/archivo', methods=['GET', 'POST'])
 def archivo():
 
@@ -280,6 +336,7 @@ def archivo():
     # Inicializamos variables
     datos_estructurados = {}
     nombre_archivo_descarga = None
+    
 
     if request.method == 'POST':
         file = request.files['archivo']
@@ -296,7 +353,7 @@ def archivo():
             coincidencias = []
             rangos_ocupados = []
 
-            sedes = ["Sede Cevaz La Limpia", "Sede Cevaz Digital", "Sede Cevaz Las Mercedes", "Sede Cevaz San Francisco"]
+            sedes = ["Sede Cevaz La Limpia", "Sede Cevaz Digital", "Sede Cevaz Las Mercedes", "Sede Cevaz San Francisco", "General"]
             posiciones_sede = []
             posiciones_bloque = []
 
@@ -435,7 +492,7 @@ def archivo():
 
                     precios_agrupados[clave].append({
                         "es_precio": True,
-                        "etiqueta": "Precio del servicio",
+                        "etiqueta": "Precio del Servicio",
                         "precio_base": precio_base,
                         "porcentaje_impuesto": porcentaje_impuesto,
                         "precio_total": f"{total:.2f}" if total is not None else None,
@@ -452,9 +509,9 @@ def archivo():
                     datos_estructurados[sede][bloque] = []
 
                 datos_estructurados[sede][bloque].extend(precios)
-
-
-    return render_template('archivo.html', datos=datos_estructurados, archivo_subido=nombre_archivo_descarga)
+                
+    hoy = date.today().isoformat()
+    return render_template('archivo.html', datos=datos_estructurados, archivo_subido=nombre_archivo_descarga, hoy=hoy)
 
 
 # region ACTUALIZAR FECHAS Y PRECIOS
@@ -525,44 +582,22 @@ def actualizar_fechas():
                     )
                 p.text = nuevo_texto
 
-    fecha_hoy = datetime.today().strftime('%d-%m-%Y')
+    fecha_hoy = datetime.today().strftime('%d-%m-%Y_%H-%M-%S')
     nuevo_nombre = f"VARIABLE AL {fecha_hoy}.docx"
-    ruta_guardado = os.path.join(app.config['UPLOAD_FOLDER'], nuevo_nombre)
-    document.save(ruta_guardado)
+    ruta_transaccion = os.path.join(app.config['TRANSACCIONES_FOLDER'], nuevo_nombre)
+    document.save(ruta_transaccion)
+    registrar_actualizacion()
+    
+    
+    # Enviar el archivo actualizado por correo al usuario logueado
+    email_usuario = session.get('usuario')
+    if email_usuario:
+        enviar_archivo_actualizado_email(email_usuario, ruta_transaccion, nuevo_nombre)
 
-    return send_file(ruta_guardado, as_attachment=True, download_name=nuevo_nombre)
+
+    return send_file(ruta_transaccion, as_attachment=True, download_name=nuevo_nombre)
 
 
-#region Reemplazar precios en texto
-def reemplazar_precio_en_texto(texto_original, nuevo_precio, nuevo_impuesto, nuevo_total):
-    texto_actualizado = texto_original
-
-    # Reemplaza el precio base
-    if nuevo_precio:
-        texto_actualizado = re.sub(PRECIO_REGEX, f"${nuevo_precio}", texto_actualizado, count=1)
-
-    # Reemplaza el impuesto
-    if nuevo_impuesto:
-        texto_actualizado = re.sub(IMPUESTO_REGEX, f"{nuevo_impuesto}% impuesto", texto_actualizado)
-
-    # Calcula el total si no se pasa explícitamente
-    if not nuevo_total and nuevo_precio and nuevo_impuesto:
-        try:
-            precio_float = float(nuevo_precio)
-            impuesto_float = float(nuevo_impuesto)
-            nuevo_total = f"{precio_float * (1 + impuesto_float / 100):.2f}"
-        except Exception as e:
-            print(f"Error calculando total: {e}")
-            nuevo_total = None
-
-    # Reemplaza o agrega el monto total
-    if nuevo_total:
-        if PRECIO_TOTAL_REGEX.search(texto_actualizado):
-            texto_actualizado = re.sub(PRECIO_TOTAL_REGEX, f"monto a pagar sería ${nuevo_total}", texto_actualizado)
-        else:
-            texto_actualizado += f" El monto a pagar sería ${nuevo_total}."
-
-    return texto_actualizado
 
 #region TRANSACCIONES
 @app.route('/transacciones')
@@ -574,14 +609,75 @@ def transacciones():
     archivos = sorted(os.listdir(app.config['TRANSACCIONES_FOLDER']), reverse=True)
     return render_template('transacciones.html', archivos=archivos)
 
+
+#region DESCARGAR TRANSACCIONES
+@app.route('/descargar-transaccion/<nombre_archivo>')
+def descargar_transaccion(nombre_archivo):
+    ruta_archivo = os.path.join(app.config['TRANSACCIONES_FOLDER'], nombre_archivo)
+    return send_file(ruta_archivo, as_attachment=True, download_name=nombre_archivo)
+
+
 #region CONFIGURACIONES
-@app.route('/settings')
+@app.route('/settings', methods=['GET', 'POST'])
 def settings():
     if 'usuario' not in session:
         flash('Debes iniciar sesión para acceder.', 'warning')
         return redirect(url_for('login'))
-    
-    return render_template('settings.html')
+
+    usuario = buscar_usuario_por_email(session['usuario'])
+
+    # Lista de preguntas predeterminadas
+    preguntas_predeterminadas = [
+        "¿Cuál es el nombre de tu primera mascota?",
+        "¿En qué ciudad naciste?",
+        "¿Cuál es tu comida favorita?"
+    ]
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        usuarios = cargar_usuarios()
+        user = next((u for u in usuarios if u['email'] == usuario['email']), None)
+
+        if action == 'change_email':
+            new_email = request.form['new_email']
+            if buscar_usuario_por_email(new_email):
+                flash('Ese correo ya está registrado.', 'error')
+            else:
+                user['email'] = new_email
+                session['usuario'] = new_email
+                guardar_usuarios(usuarios)
+                flash('Correo actualizado correctamente.', 'success')
+
+        elif action == 'change_password':
+            current_password = request.form['current_password']
+            new_password = request.form['new_password']
+            confirm_password = request.form['confirm_password']
+            if not check_password_hash(user['password'], current_password):
+                flash('Contraseña actual incorrecta.', 'error')
+            elif new_password != confirm_password:
+                flash('Las contraseñas nuevas no coinciden.', 'error')
+            else:
+                user['password'] = generate_password_hash(new_password)
+                guardar_usuarios(usuarios)
+                flash('Contraseña actualizada correctamente.', 'success')
+
+        elif action == 'change_recovery':
+            pregunta = request.form['pregunta_recuperacion']
+            respuesta = request.form['respuesta_recuperacion']
+            user['pregunta_recuperacion'] = pregunta
+            user['respuesta_recuperacion'] = respuesta
+            guardar_usuarios(usuarios)
+            flash('Pregunta de recuperación actualizada.', 'success')
+
+        return redirect(url_for('settings'))
+
+    # Pasa la pregunta y respuesta actual del usuario
+    return render_template(
+        'settings.html',
+        preguntas_predeterminadas=preguntas_predeterminadas,
+        pregunta_actual=usuario.get('pregunta_recuperacion', ''),
+        respuesta_actual=usuario.get('respuesta_recuperacion', '')
+    )
 
 #region HELP
 @app.route('/help')
@@ -592,41 +688,21 @@ def help():
     
     return render_template('help.html')
 
-#region DESCARGAR TRANSACCIONES
-@app.route('/descargar-transaccion/<nombre_archivo>')
-def descargar_transaccion(nombre_archivo):
-    ruta_archivo = os.path.join(app.config['TRANSACCIONES_FOLDER'], nombre_archivo)
-    return send_file(ruta_archivo, as_attachment=True, download_name=nombre_archivo)
-
-#region CREAR EVENTO
-@app.route('/crear-evento', methods=['POST'])
-def crear_evento():
-    titulo = request.form['titulo']
-    fecha = request.form['fecha']
-    descripcion = request.form['descripcion']
-
-    nuevo_evento = {
-        "title": titulo,
-        "start": fecha,
-        "description": descripcion
-    }
-
-    # Guardar en eventos.json
-    if os.path.exists(EVENTOS_FILE):
-        with open(EVENTOS_FILE, 'r') as f:
-            eventos = json.load(f)
-    else:
-        eventos = []
-
-    eventos.append(nuevo_evento)
-    with open(EVENTOS_FILE, 'w') as f:
-        json.dump(eventos, f, indent=4)
-
-    # Enviar notificación por correo
-    enviar_notificacion_email(titulo, fecha, descripcion)
-
-    flash("Evento creado y notificación enviada.", "success")
-    return redirect(url_for('calendar'))
+#region ENVIAR ARCHIVO ACTUALIZADO POR CORREO
+def enviar_archivo_actualizado_email(destinatario, ruta_archivo, nombre_archivo):
+    try:
+        msg = Message(
+            subject="Archivo maestro actualizado",
+            sender=app.config['MAIL_USERNAME'],
+            recipients=[destinatario]
+        )
+        msg.body = "El archivo maestro ha sido actualizado, por favor actualizar el script en chatbot by magic school."
+        with open(ruta_archivo, "rb") as fp:
+            msg.attach(nombre_archivo, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fp.read())
+        mail.send(msg)
+    except Exception as e:
+        print(f"Error al enviar el archivo actualizado por correo: {str(e)}")
+        flash("Error al enviar el archivo actualizado por correo.", "error")
 
 #region ENVIAR NOTIFICACIÓN POR CORREO
 def enviar_notificacion_email(titulo, fecha, descripcion):
@@ -640,7 +716,7 @@ def enviar_notificacion_email(titulo, fecha, descripcion):
 
         msg = Message(
             subject=f"Nuevo evento: {titulo}",
-            sender='anacevazeditor@gmail.com',
+            sender=app.config['MAIL_USERNAME'],
             recipients=[email_usuario]  # se envía al usuario actual
         )
         msg.body = f"Evento programado para el {fecha}:\n\n{descripcion}"
@@ -652,62 +728,15 @@ def enviar_notificacion_email(titulo, fecha, descripcion):
 #region DESCARGAR ARCHIVO
 @app.route('/descargar/<nombre_archivo>')
 def descargar_archivo(nombre_archivo):
-    fecha_hoy = datetime.today().strftime('%d-%m-%Y')
+    fecha_hoy = datetime.today().strftime('%d-%m-%Y_%H-%M-%S')
     nuevo_nombre = f"VARIABLE AL {fecha_hoy}.docx"
     ruta_archivo = os.path.join(app.config['UPLOAD_FOLDER'], nombre_archivo)
     return send_file(ruta_archivo, as_attachment=True, download_name=nuevo_nombre)
 
 
-
-
-
-# ------------------------ INICIO ------------------------
+# region ------------------------ INICIO ------------------------
 if __name__ == '__main__':
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(enviar_recordatorios_eventos, 'cron', hour=8, minute=0)  # Enviar recordatorios todos los días a las 8:00 AM
+    scheduler.start()
     app.run(debug=True)
-
-
-'''def formatear_rango_fechas(fecha_inicio_1, fecha_fin_1, fecha_inicio_2, fecha_fin_2, fecha_inicio_3, fecha_fin_3):
-    try:
-        fecha_inicio_1 = datetime.strptime(fecha_inicio_1, '%Y-%m-%d')
-        fecha_fin_1 = datetime.strptime(fecha_fin_1, '%Y-%m-%d')
-        fecha_inicio_2 = datetime.strptime(fecha_inicio_2, '%Y-%m-%d')
-        fecha_fin_2 = datetime.strptime(fecha_fin_2, '%Y-%m-%d')
-        fecha_inicio_3 = datetime.strptime(fecha_inicio_3, '%Y-%m-%d')
-        fecha_fin_3 = datetime.strptime(fecha_fin_3, '%Y-%m-%d')
-    except ValueError:
-        return "Error: Formato de fecha incorrecto."
-
-    def formatear_fecha(fecha):
-        return f"{fecha.day:02d} de {fecha.strftime('%B').capitalize()}"
-
-    rango_1 = f"Del {formatear_fecha(fecha_inicio_1)} al {formatear_fecha(fecha_fin_1)} de {fecha_inicio_1.year}"
-    rango_2 = f"Del {formatear_fecha(fecha_inicio_2)} al {formatear_fecha(fecha_fin_2)} de {fecha_inicio_2.year}"
-    rango_3 = f"Del {formatear_fecha(fecha_inicio_3)} al {formatear_fecha(fecha_fin_3)} de {fecha_inicio_3.year}"
-
-    return rango_1, rango_2, rango_3
-    
-    
-    
-    
-    @app.route('/test-email')
-def test_email():
-    try:
-        msg = Message("Test Email",
-                      sender="atencionenredes@cevaz.com",
-                      recipients=["amota@urbe.edu.ve"])
-        msg.body = "Este es un correo de prueba."
-        mail.send(msg)
-        return "Correo enviado correctamente."
-    except Exception as e:
-        return f"Error al enviar correo: {str(e)}"
-
-
-
-@app.route('/dashboard')
-def dashboard():
-    if 'usuario' not in session:
-        flash('Debes iniciar sesión para acceder.', 'warning')
-        return redirect(url_for('login'))
-    return render_template('archivo.html')
-        
-        '''

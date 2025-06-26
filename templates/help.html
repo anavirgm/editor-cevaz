@@ -3,5 +3,41 @@
 {% block title %}Help{% endblock %}
 
 {% block content %}
-<h1>Help</h1>
+<h1>Ayuda</h1>
+
+<div class="help-manual-card">
+    <h2>Manual de usuario</h2>
+    <div>
+        <i class="ri-file-pdf-2-fill" style="font-size: 4rem; color: #e74c3c; margin-bottom: 0.5rem;"></i>
+    </div>
+    <p>
+        Descarga el manual de usuario para aprender a utilizar todas las funciones del sistema paso a paso.
+    </p>
+    <a href="{{ url_for('static', filename='manual_usuario.pdf') }}" class="btn btn-primary" download>
+        Descargar manual
+    </a>
+</div>
+
+<div class="help-faq-card mt-5">
+    <h2>Preguntas frecuentes FAQ</h2>
+    <ul>
+        <li><strong>¿Qué hago si olvido mi contraseña?</strong><br>
+            Utiliza la opción <em>Forgot Password?</em> y sigue los pasos de recuperación.</li>
+        <li><strong>¿Puedo cambiar mi correo electrónico?</strong><br>
+            Sí, desde la sección <em>Settings</em>.</li>
+        <li><strong>¿Cómo recibo notificaciones de eventos?</strong><br>
+            Las notificaciones se envían automáticamente al correo registrado.</li>
+        <li><strong>¿Qué formatos de archivo se aceptan?</strong><br>
+            Solo archivos <code>.docx</code> (Word).</li>
+        <li><strong>¿Quién puede ver los archivos subidos?</strong><br>
+            Solo los usuarios autenticados.</li>
+        <li><strong>¿Cuáles son las preguntas de seguridad disponibles?</strong><br>
+            <ul>
+                <li>¿Cuál es el nombre de tu primera mascota?</li>
+                <li>¿En qué ciudad naciste?</li>
+                <li>¿Cuál es tu comida favorita?</li>
+            </ul>
+        </li>
+    </ul>
+</div>
 {% endblock %}

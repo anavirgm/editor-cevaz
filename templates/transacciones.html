@@ -16,19 +16,18 @@
 {% endwith %}
 
 
-    {% if archivos %}
-        <ul>
-        {% for archivo in archivos %}
-            <li>
-                {{ archivo }} - 
-                <a href="{{ url_for('descargar_transaccion', nombre_archivo=archivo) }}">Descargar</a>
-            </li>
-        {% endfor %}
-        </ul>
-    {% else %}
-        <p>No hay archivos disponibles.</p>
-    {% endif %}
+{% if archivos %}
+<div class="archivo-lista">
+    {% for archivo in archivos %}
+    <div class="archivo-cuadro">
+        <span class="archivo-nombre">{{ archivo }}</span>
+        <a class="boton-descargar" href="{{ url_for('descargar_transaccion', nombre_archivo=archivo) }}">Descargar</a>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<label>No hay archivos disponibles.</label>
+{% endif %}
 
 {% endblock %}
-
-

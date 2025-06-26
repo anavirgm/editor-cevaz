@@ -5,8 +5,6 @@
 {% block content %}
 <h1>Calendario de actualizaciones</h1>
 
-<div id="calendar"></div>
-
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 <ul class="flashes">
@@ -17,21 +15,23 @@
 {% endif %}
 {% endwith %}
 
+<div id="calendar"></div>
+
+
+
 <h2>Crear nuevo evento</h2>
 <form method="POST" action="{{ url_for('crear_evento') }}">
   <label for="titulo">Título:</label><br>
   <input type="text" id="titulo" name="titulo" required><br>
 
   <label for="fecha">Fecha:</label><br>
-  <input type="date" id="fecha" name="fecha" required><br>
+  <input type="date" id="fecha" name="fecha" min="{{hoy}}" required><br>
 
   <label for="descripcion">Descripción:</label><br>
   <textarea id="descripcion" name="descripcion" required></textarea><br>
 
   <button type="submit">Crear evento</button>
 </form>
-
-<hr>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -48,12 +48,4 @@
     calendar.render();
   });
 </script>
-
-
-<style>
-  #calendar {
-    max-width: 1100px;
-    margin: 40px auto;
-  }
-</style>
 {% endblock %}

@@ -46,7 +46,7 @@
                             <span>Calendar</span>
                         </a>
 
-                        <a href="{{ url_for('transacciones') }}" class="sidebar__link">
+                        <a href="{{ url_for('transacciones') }}" class="sidebar__link {% if request.path == url_for('transacciones') %}active-link{% endif %}">
                             <i class="ri-arrow-up-down-line"></i>
                             <span>Transactions</span>
                         </a>
@@ -56,11 +56,11 @@
                 <div>
                     <h3 class="sidebar__title">SETTINGS</h3>
                     <div class="sidebar__list">
-                        <a href="#" class="sidebar__link">
+                        <a href="{{ url_for('settings') }}" class="sidebar__link {% if request.path == url_for('settings') %}active-link{% endif %}">
                             <i class="ri-settings-3-fill"></i>
                             <span>Settings</span>
                         </a>
-                        <a href="#" class="sidebar__link">
+                        <a href="{{ url_for('help') }}" class="sidebar__link {% if request.path == url_for('help') %}active-link{% endif %}">
                             <i class="ri-question-fill"></i>
                             <span>Help</span>
                         </a>
